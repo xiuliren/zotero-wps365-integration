@@ -1,6 +1,6 @@
-# Zotero Google Docs Integration
+# Zotero WPS 365 Integration
 
-Zotero Google Docs Integration is a Zotero integration plugin that communicates between Google Docs and Zotero via the Connector.
+Zotero WPS 365 Integration is a Zotero integration plugin that communicates between WPS 365 and Zotero via the Connector.
 
 ## Back-end
 
@@ -15,7 +15,7 @@ To learn more read the [Apps Script reference](https://developers.google.com/app
 
 ## Front-end
 
-The connector front-end adds Zotero UI elements to the Google Docs editor
+The connector front-end adds Zotero UI elements to the WPS 365 editor
 and acts as a glue-layer between the back-end and the front end. The connector
 also:
 - Inserts initial citation placeholders because we have no access to the user

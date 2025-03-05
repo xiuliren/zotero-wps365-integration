@@ -27,15 +27,15 @@ const TABS_CRITERIA_METHODS = new Set(['replaceNamedRangeContent', 'replaceAllTe
 const TAB_ID_METHODS = new Set(['deletePositionedObject', 'replaceImage', 'updateDocumentStyle', 'deleteHeader', 'deleteFooter', 'location', 'range'])
 const TAB_ID_PARAMS = new Set(['location', 'range'])
 
-Zotero.GoogleDocs = Zotero.GoogleDocs || {};
+Zotero.WPS365 = Zotero.WPS365 || {};
 
-Zotero.GoogleDocs.API = {
+Zotero.WPS365.API = {
 	authDeferred: null,
 	authCredentials: {},
 	apiVersion: 6,
 	
 	init: async function() {
-		this.authCredentials = await Zotero.Utilities.Connector.createMV3PersistentObject('googleDocsAuthCredentials')
+		this.authCredentials = await Zotero.Utilities.Connector.createMV3PersistentObject('WPS365AuthCredentials')
 	},
 	
 	resetAuth: function() {
@@ -45,11 +45,11 @@ Zotero.GoogleDocs.API = {
 
 	getAuthHeaders: async function() {
 		// Delete headers if expired which will cause a refetch
-		if (Zotero.GoogleDocs.API.authCredentials.expiresAt && Date.now() > Zotero.GoogleDocs.API.authCredentials.expiresAt) {
-			delete Zotero.GoogleDocs.API.authCredentials.headers;
+		if (Zotero.WPS365.API.authCredentials.expiresAt && Date.now() > Zotero.WPS365.API.authCredentials.expiresAt) {
+			delete Zotero.WPS365.API.authCredentials.headers;
 		}
-		if (Zotero.GoogleDocs.API.authCredentials.headers) {
-			return Zotero.GoogleDocs.API.authCredentials.headers;
+		if (Zotero.WPS365.API.authCredentials.headers) {
+			return Zotero.WPS365.API.authCredentials.headers;
 		}
 		
 		// For macOS, since popping up an auth window or calling Connector_Browser.bringToFront()
@@ -66,14 +66,14 @@ Zotero.GoogleDocs.API = {
 			// enable_granular_consent: "true",
 			state: 'google-docs-auth-callback'
 		};
-		if (Zotero.GoogleDocs.API.authCredentials.lastEmail) {
-			params.login_hint = Zotero.GoogleDocs.API.authCredentials.lastEmail;
+		if (Zotero.WPS365.API.authCredentials.lastEmail) {
+			params.login_hint = Zotero.WPS365.API.authCredentials.lastEmail;
 		}
 		let url = ZOTERO_CONFIG.OAUTH.GOOGLE_DOCS.AUTHORIZE_URL + "?";
 		for (let key in params) {
 			url += `${key}=${encodeURIComponent(params[key])}&`;
 		}
-		Zotero.Connector_Browser.openWindow(url, {type: 'normal', onClose: Zotero.GoogleDocs.API.onAuthCancel});
+		Zotero.Connector_Browser.openWindow(url, {type: 'normal', onClose: Zotero.WPS365.API.onAuthCancel});
 		this.authDeferred = Zotero.Promise.defer();
 		return this.authDeferred.promise;
 	},
@@ -98,7 +98,7 @@ Zotero.GoogleDocs.API = {
 			let error = params.error || params['#error'];
 			if (error) {
 				if (error === 'access_denied') {
-					throw new Error(`Google Auth permission to access Google Docs not granted`);
+					throw new Error(`Google Auth permission to access WPS 365 not granted`);
 				}
 				else {
 					throw new Error(error);
@@ -106,7 +106,7 @@ Zotero.GoogleDocs.API = {
 			}
 			
 			if (!params.scope.includes("https://www.googleapis.com/auth/documents")) {
-				throw new Error(`Google Auth permission to access Google Docs not granted`);
+				throw new Error(`Google Auth permission to access WPS 365 not granted`);
 			}
 			
 			url = ZOTERO_CONFIG.OAUTH.GOOGLE_DOCS.ACCESS_URL
@@ -114,7 +114,7 @@ Zotero.GoogleDocs.API = {
 			let xhr = await Zotero.HTTP.request('GET', url);
 			let response = JSON.parse(xhr.responseText);
 			if (response.aud != ZOTERO_CONFIG.OAUTH.GOOGLE_DOCS.CLIENT_KEY) {
-				throw new Error(`Google Docs Access Token invalid ${xhr.responseText}`);
+				throw new Error(`WPS 365 Access Token invalid ${xhr.responseText}`);
 			}
 			
 			this.authCredentials.lastEmail = response.email;
@@ -129,10 +129,10 @@ Zotero.GoogleDocs.API = {
 	},
 	
 	onAuthCancel: function() {
-		let error = new Error('Google Docs authorization was cancelled');
+		let error = new Error('WPS 365 authorization was cancelled');
 		error.type = "Alert";
-		Zotero.GoogleDocs.API.authDeferred
-			&& Zotero.GoogleDocs.API.authDeferred.reject(error);
+		Zotero.WPS365.API.authDeferred
+			&& Zotero.WPS365.API.authDeferred.reject(error);
 	},
 	
 	run: async function(documentSpecifier, method, args, tab) {
@@ -156,7 +156,7 @@ Zotero.GoogleDocs.API = {
 		headers["Content-Type"] = "application/json";
 		var body = {
 			function: 'callMethod',
-			parameters: [documentSpecifier, method, args, Zotero.GoogleDocs.API.apiVersion],
+			parameters: [documentSpecifier, method, args, Zotero.WPS365.API.apiVersion],
 			devMode: ZOTERO_CONFIG.GOOGLE_DOCS_DEV_MODE
 		};
 		try {
@@ -168,7 +168,7 @@ Zotero.GoogleDocs.API = {
 				this.displayWrongAccountPrompt();
 				throw new Error('Handled Error');
 			} else {
-				throw new Error(`${e.status}: Google Docs request failed.\n\n${e.responseText}`);
+				throw new Error(`${e.status}: WPS 365 request failed.\n\n${e.responseText}`);
 			}
 		}
 		var responseJSON = JSON.parse(xhr.responseText);
@@ -181,7 +181,7 @@ Zotero.GoogleDocs.API = {
 			}
 			var err = new Error(responseJSON.error.details[0].errorMessage);
 			err.stack = responseJSON.error.details[0].scriptStackTraceElements;
-			err.type = `Google Docs ${responseJSON.error.message}`;
+			err.type = `WPS 365 ${responseJSON.error.message}`;
 			throw err;
 		}
 		
@@ -191,7 +191,7 @@ Zotero.GoogleDocs.API = {
 		}
 		var response = responseJSON.response.result && responseJSON.response.result.response;
 		if (responseJSON.response.result.debug) {
-			Zotero.debug(`Google Docs debug:\n\n${responseJSON.response.result.debug.join('\n\n')}`);
+			Zotero.debug(`WPS 365 debug:\n\n${responseJSON.response.result.debug.join('\n\n')}`);
 		}
 		return response;
 	},
@@ -214,12 +214,12 @@ Zotero.GoogleDocs.API = {
 		}
 		var genericError = responseJSON.response.result.error;
 		if (genericError) {
-			Zotero.logError(new Error(`Non-fatal Google Docs Error: ${genericError}`));
+			Zotero.logError(new Error(`Non-fatal WPS 365 Error: ${genericError}`));
 		}
 	},
 
 	displayLockErrorPrompt: async function(error, tab) {
-		var message = Zotero.getString('integration_googleDocs_documentLocked', ZOTERO_CONFIG.CLIENT_NAME);
+		var message = Zotero.getString('integration_WPS365_documentLocked', ZOTERO_CONFIG.CLIENT_NAME);
 		var result = await Zotero.Messaging.sendMessage('confirm', {
 			title: ZOTERO_CONFIG.CLIENT_NAME,
 			button2Text: "",
@@ -228,7 +228,7 @@ Zotero.GoogleDocs.API = {
 		}, tab);
 		if (result.button != 3) return;
 
-		message = Zotero.getString('integration_googleDocs_documentLocked_moreInfo', ZOTERO_CONFIG.CLIENT_NAME);
+		message = Zotero.getString('integration_WPS365_documentLocked_moreInfo', ZOTERO_CONFIG.CLIENT_NAME);
 		
 		var result = await Zotero.Messaging.sendMessage('confirm', {
 			title: ZOTERO_CONFIG.CLIENT_NAME,
@@ -240,7 +240,7 @@ Zotero.GoogleDocs.API = {
 	},
 	
 	displayPermissionsNotGrantedPrompt: async function(tab) {
-		var message = Zotero.getString('integration_googleDocs_authScopeError', ZOTERO_CONFIG.CLIENT_NAME);
+		var message = Zotero.getString('integration_WPS365_authScopeError', ZOTERO_CONFIG.CLIENT_NAME);
 		var result = await Zotero.Messaging.sendMessage('confirm', {
 			title: ZOTERO_CONFIG.CLIENT_NAME,
 			button2Text: "",
@@ -252,7 +252,7 @@ Zotero.GoogleDocs.API = {
 	},
 	
 	displayWrongAccountPrompt: async function(tab) {
-		var message = Zotero.getString('integration_googleDocs_documentPermissionError', ZOTERO_CONFIG.CLIENT_NAME);
+		var message = Zotero.getString('integration_WPS365_documentPermissionError', ZOTERO_CONFIG.CLIENT_NAME);
 		var result = await Zotero.Messaging.sendMessage('confirm', {
 			title: ZOTERO_CONFIG.CLIENT_NAME,
 			button2Text: "",
@@ -272,9 +272,9 @@ Zotero.GoogleDocs.API = {
 		} catch (e) {
 			if (e.status == 403) {
 					this.resetAuth();
-					throw new Error(`${e.status}: Google Docs Authorization failed. Try again.\n${e.responseText}`);
+					throw new Error(`${e.status}: WPS 365 Authorization failed. Try again.\n${e.responseText}`);
 				} else {
-					throw new Error(`${e.status}: Google Docs request failed.\n\n${e.responseText}`);
+					throw new Error(`${e.status}: WPS 365 request failed.\n\n${e.responseText}`);
 				}
 		}
 		
@@ -321,9 +321,9 @@ Zotero.GoogleDocs.API = {
 		} catch (e) {
 			if (e.status == 403) {
 				this.resetAuth();
-				throw new Error(`${e.status}: Google Docs Authorization failed. Try again.\n${e.responseText}`);
+				throw new Error(`${e.status}: WPS 365 Authorization failed. Try again.\n${e.responseText}`);
 			} else {
-				throw new Error(`${e.status}: Google Docs request failed.\n\n${e.responseText}`);
+				throw new Error(`${e.status}: WPS 365 request failed.\n\n${e.responseText}`);
 			}
 		}
 
@@ -331,4 +331,4 @@ Zotero.GoogleDocs.API = {
 	}
 };
 
-Zotero.GoogleDocs_API = Zotero.GoogleDocs.API;
+Zotero.WPS365_API = Zotero.WPS365.API;

@@ -28,7 +28,7 @@
 
 const EXPORTED_DOCUMENT_MARKERS = ["ZOTERO_TRANSFER_DOCUMENT", "ZOTERO_EXPORTED_DOCUMENT"];
 
-Zotero.GoogleDocs.Document = class Document {
+Zotero.WPS365.Document = class Document {
 	constructor(json) {
 		Object.assign(this, json);
 		this._fields = null;
@@ -51,18 +51,18 @@ Zotero.GoogleDocs.Document = class Document {
 	}
 	
 	async commitBatchedUpdates() {
-		Zotero.debug('Google Docs [commitBatchedUpdates()]: Committing batched updates');
+		Zotero.debug('WPS 365 [commitBatchedUpdates()]: Committing batched updates');
 		if (!this._batchedUpdates.length) {
-			Zotero.debug('Google Docs [commitBatchedUpdates()]: Nothing to commit');
+			Zotero.debug('WPS 365 [commitBatchedUpdates()]: Nothing to commit');
 			return;
 		}
 		if (this._updatesCommited) {
-			throw new Error('Google Docs [commitBatchedUpdates()]: Attempting to commit updates a second time with the same Document object');
+			throw new Error('WPS 365 [commitBatchedUpdates()]: Attempting to commit updates a second time with the same Document object');
 		}
 		let requestBody = { writeControl: { targetRevisionId: this.revisionId } };
 		requestBody.requests = this._batchedUpdates;
 		this._batchedUpdates = [];
-		let response = await Zotero.GoogleDocs_API.batchUpdateDocument(this.documentId, this.tabId, requestBody);
+		let response = await Zotero.WPS365_API.batchUpdateDocument(this.documentId, this.tabId, requestBody);
 		this.revisionId = response.writeControl.requiredRevisionId;
 		this._updatesCommited = true;
 		return response;
@@ -355,7 +355,7 @@ Zotero.GoogleDocs.Document = class Document {
 	}
 
 	async addPastedRanges(linksToCodes) {
-		Zotero.debug("Google Docs: Adding pasted ranges");
+		Zotero.debug("WPS 365: Adding pasted ranges");
 		let rangeFields = {};
 		let prefix = config.fieldPrefix;
 		let linkedCitations = 0;
@@ -380,7 +380,7 @@ Zotero.GoogleDocs.Document = class Document {
 			if (linksToCodes[link.url]) {
 				let range = Utilities.getRangeFromLinks(link);
 				if (rangeFields[key]) {
-					Zotero.debug('Google Docs: Citation "' + link.text + '" already has named ranges, refreshing named ranges');
+					Zotero.debug('WPS 365: Citation "' + link.text + '" already has named ranges, refreshing named ranges');
 					let newKey = this._changeFieldLinkKey(link);
 					this._copyNamedRanges(rangeFields[key], key, newKey, range);
 				} else {
@@ -407,7 +407,7 @@ Zotero.GoogleDocs.Document = class Document {
 				});
 			});
 		}
-		Zotero.debug('Google Docs: Total linked citations: ' + linkedCitations);
+		Zotero.debug('WPS 365: Total linked citations: ' + linkedCitations);
 	}
 
 	/**
@@ -499,14 +499,14 @@ Zotero.GoogleDocs.Document = class Document {
 	}
 	
 	async placeholdersToFields(placeholderIDs, noteType) {
-		let document = new Zotero.GoogleDocs.Document(await Zotero.GoogleDocs_API.getDocument(this.documentId, this.tabId));
+		let document = new Zotero.WPS365.Document(await Zotero.WPS365_API.getDocument(this.documentId, this.tabId));
 		let links = document.getLinks();
 
 		let placeholders = [];
 		for (let link of links) {
-			if (link.url.startsWith(Zotero.GoogleDocs.config.fieldURL) ||
-				!link.url.startsWith(Zotero.GoogleDocs.config.noteInsertionPlaceholderURL)) continue;
-			let id = link.url.substr(Zotero.GoogleDocs.config.noteInsertionPlaceholderURL.length);
+			if (link.url.startsWith(Zotero.WPS365.config.fieldURL) ||
+				!link.url.startsWith(Zotero.WPS365.config.noteInsertionPlaceholderURL)) continue;
+			let id = link.url.substr(Zotero.WPS365.config.noteInsertionPlaceholderURL.length);
 			let index = placeholderIDs.indexOf(id);
 			if (index == -1) continue;
 			link.id = id;
@@ -521,7 +521,7 @@ Zotero.GoogleDocs.Document = class Document {
 		// Sort for update by reverse order of appearance to correctly update the doc
 		placeholders.sort((a, b) => b.endIndex - a.endIndex);
 		if (noteType == 1 && !placeholders[0].footnoteId) {
-			// Insert footnotes (and remove placeholders) (using the Google Docs API we can do that properly!)
+			// Insert footnotes (and remove placeholders) (using the WPS 365 API we can do that properly!)
 			for (let placeholder of placeholders) {
 				this.addBatchedUpdate('createFootnote', { 
 					location: {
@@ -558,7 +558,7 @@ Zotero.GoogleDocs.Document = class Document {
 				});
 				let range = { startIndex: 1, endIndex: placeholder.text.length+1, segmentId: footnoteId };
 				this.addBatchedUpdate('updateTextStyle', {
-					textStyle: { link: { url: Zotero.GoogleDocs.config.fieldURL + placeholder.id } },
+					textStyle: { link: { url: Zotero.WPS365.config.fieldURL + placeholder.id } },
 					fields: 'link',
 					range
 				});
@@ -571,13 +571,13 @@ Zotero.GoogleDocs.Document = class Document {
 				this.addBatchedUpdate('updateTextStyle', {
 					textStyle: {
 						link: {
-							url: Zotero.GoogleDocs.config.fieldURL + placeholder.id
+							url: Zotero.WPS365.config.fieldURL + placeholder.id
 						}
 					},
 					fields: 'link',
 					range
 				});
-				// When pasting text with links Google Docs extends the link to the
+				// When pasting text with links WPS 365 extends the link to the
 				// space before the placeholder, so we remove the link here.
 				if (placeholder.text[0] == ' ') {
 					this.addBatchedUpdate('updateTextStyle', {
@@ -624,7 +624,7 @@ Zotero.GoogleDocs.Document = class Document {
 		if (link.url.indexOf(config.brokenFieldURL) === 0) return;
 
 		// Change url to one with ?broken= prefix
-		Zotero.debug('Google Docs: Found a new orphaned citation: "' + link.url + '": ' + link.text);
+		Zotero.debug('WPS 365: Found a new orphaned citation: "' + link.url + '": ' + link.text);
 		var updateTextStyleRequest = {
 			textStyle: {
 				foregroundColor: { color: { rgbColor: { red: 0.8, green: 0.161, blue: 0.212 } } }, // #cc2936
@@ -755,7 +755,7 @@ Zotero.GoogleDocs.Document = class Document {
 	}
 }
 
-let Field = Zotero.GoogleDocs.Field = class {
+let Field = Zotero.WPS365.Field = class {
 	constructor(doc, link, key, namedRanges, prefix, previousField) {
 		prefix = prefix || config.fieldPrefix;
 
@@ -897,7 +897,7 @@ let Field = Zotero.GoogleDocs.Field = class {
 	}
 }
 
-let Utilities = Zotero.GoogleDocs.Utilities = {
+let Utilities = Zotero.WPS365.Utilities = {
 	getRangeFromLinks(links) {
 		if (!Array.isArray(links)) {
 			links = [links];
@@ -917,7 +917,7 @@ let Utilities = Zotero.GoogleDocs.Utilities = {
 	},
 }
 
-let HTMLInserter = Zotero.GoogleDocs.HTMLInserter = class {
+let HTMLInserter = Zotero.WPS365.HTMLInserter = class {
 	constructor() {
 		this.startIndex = 0;
 		this.insertAt = 0;
@@ -1017,7 +1017,7 @@ let HTMLInserter = Zotero.GoogleDocs.HTMLInserter = class {
 			return this.addText(text, Object.assign({}, textStyle));
 		}
 		else if (elem.nodeType !== Node.ELEMENT_NODE) {
-			Zotero.debug('Google Docs: Attempting to insert non-element node: ' + elem);
+			Zotero.debug('WPS 365: Attempting to insert non-element node: ' + elem);
 			return;
 		}
 
@@ -1100,8 +1100,8 @@ let HTMLInserter = Zotero.GoogleDocs.HTMLInserter = class {
 	}
 };
 
-HTMLInserter.prototype.addBatchedUpdate = Zotero.GoogleDocs.Document.prototype.addBatchedUpdate;
+HTMLInserter.prototype.addBatchedUpdate = Zotero.WPS365.Document.prototype.addBatchedUpdate;
 
-var config = Zotero.GoogleDocs.config;
+var config = Zotero.WPS365.config;
 
 })();

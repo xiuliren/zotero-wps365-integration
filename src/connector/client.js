@@ -24,7 +24,7 @@
 */
 (function() {
 
-Zotero.GoogleDocs.Client = function() {
+Zotero.WPS365.Client = function() {
 	this.documentId = document.location.href.match(/https:\/\/docs.google.com\/document\/d\/([^/]*)/)[1];
 	this.tabID = new URL(document.location.href).searchParams.get('tab');
 	this.id = Zotero.Utilities.randomString();
@@ -32,16 +32,16 @@ Zotero.GoogleDocs.Client = function() {
 	this._fields = null;
 	this._doc = null;
 	
-	Zotero.GoogleDocs.clients[this.id] = this;
+	Zotero.WPS365.clients[this.id] = this;
 };
-Zotero.GoogleDocs.Client.isV2 = true;
-Zotero.GoogleDocs.Client.prototype = {
+Zotero.WPS365.Client.isV2 = true;
+Zotero.WPS365.Client.prototype = {
 	/**
 	 * Called before each integration transaction once
 	 */
 	init: async function() {
-		this.currentFieldID = await Zotero.GoogleDocs.UI.getSelectedFieldID();
-		this.isInLink = Zotero.GoogleDocs.UI.isInLink();
+		this.currentFieldID = await Zotero.WPS365.UI.getSelectedFieldID();
+		this.isInLink = Zotero.WPS365.UI.isInLink();
 		this.orphanedCitationAlertShown = false;
 		this.insertingNote = false;
 		this.insertNoteIndex = 1;
@@ -81,7 +81,7 @@ Zotero.GoogleDocs.Client.prototype = {
 		}
 		
 		if (method == 'complete') return result;
-		return Zotero.GoogleDocs.respond(this, result ? JSON.stringify(result) : 'null');
+		return Zotero.WPS365.respond(this, result ? JSON.stringify(result) : 'null');
 	},
 	
 	getDocument: async function() {
@@ -89,7 +89,7 @@ Zotero.GoogleDocs.Client.prototype = {
 	},
 	
 	getActiveDocument: async function() {
-		Zotero.GoogleDocs.UI.toggleUpdatingScreen(true);
+		Zotero.WPS365.UI.toggleUpdatingScreen(true);
 		return {
 			documentId: this.documentId,
 			outputFormat: 'html',
@@ -97,14 +97,14 @@ Zotero.GoogleDocs.Client.prototype = {
 			supportsImportExport: true,
 			supportsTextInsertion: true,
 			supportsCitationMerging: true,
-			processorName: "Google Docs"
+			processorName: "WPS 365"
 		}
 	},
 
 	getGoogleDocument: async function() {
 		if (this._doc) return this._doc;
-		Zotero.debug('Google Docs [getGoogleDocument()]: Retrieving document from API');
-		this._doc = new Zotero.GoogleDocs.Document(await Zotero.GoogleDocs_API.getDocument(this.documentId, this.tabId));
+		Zotero.debug('WPS 365 [getGoogleDocument()]: Retrieving document from API');
+		this._doc = new Zotero.WPS365.Document(await Zotero.WPS365_API.getDocument(this.documentId, this.tabId));
 		return this._doc;
 	},
 	
@@ -136,21 +136,21 @@ Zotero.GoogleDocs.Client.prototype = {
 	},
 	
 	activate: async function(force) {
-		Zotero.GoogleDocs.UI.activate(force);
+		Zotero.WPS365.UI.activate(force);
 	},
 	
 	cleanup: async function() {},
 	
 	complete: async function() {
 		if (!this.insertingNote) {
-			await Zotero.GoogleDocs.UI.moveCursorToEndOfCitation();
+			await Zotero.WPS365.UI.moveCursorToEndOfCitation();
 		}
-		delete Zotero.GoogleDocs.clients[this.id];
-		Zotero.GoogleDocs.UI.toggleUpdatingScreen(false);
+		delete Zotero.WPS365.clients[this.id];
+		Zotero.WPS365.UI.toggleUpdatingScreen(false);
 	},
 	
 	displayAlert: async function(text, icons, buttons) {
-		var result = await Zotero.GoogleDocs.UI.displayAlert(text, icons, buttons);
+		var result = await Zotero.WPS365.UI.displayAlert(text, icons, buttons);
 		if (buttons < 3) {
 			return result % 2;
 		} else {
@@ -167,12 +167,12 @@ Zotero.GoogleDocs.Client.prototype = {
 		// has to wait for doc sync before it is displayed, which can take a long time. On the
 		// other hand we only need to wait for save in the first place for a get operation - to
 		// to fetch the fields here to be displayed in the Cited section of the citation dialog
-		await Zotero.GoogleDocs.UI.waitToSaveInsertion();
+		await Zotero.WPS365.UI.waitToSaveInsertion();
 		const doc = await this.getGoogleDocument();
 		
 		let fields;
-		fields = doc.getFields(Zotero.GoogleDocs.config.fieldPrefix, !this._documentExport);
-		Zotero.GoogleDocs.UI.orphanedCitations.setCitations(doc.orphanedCitations);
+		fields = doc.getFields(Zotero.WPS365.config.fieldPrefix, !this._documentExport);
+		Zotero.WPS365.UI.orphanedCitations.setCitations(doc.orphanedCitations);
 
 		this._fieldsByFieldId = {};
 		fields.forEach(field => this._fieldsByFieldId[field.id] = field);
@@ -194,16 +194,16 @@ Zotero.GoogleDocs.Client.prototype = {
 
 	insertText: async function(text) {
 		this.insertingNote = true;
-		await Zotero.GoogleDocs.UI.writeText(text);
-		await Zotero.GoogleDocs.UI.waitToSaveInsertion();
-		// Need to refetch google doc after insertion
+		await Zotero.WPS365.UI.writeText(text);
+		await Zotero.WPS365.UI.waitToSaveInsertion();
+		// Need to refetch wps 365 after insertion
 		this.resetGoogleDocument();
 	},	
 	
 	insertField: async function(fieldType, noteType) {
-		var id = Zotero.Utilities.randomString(Zotero.GoogleDocs.config.fieldKeyLength);
+		var id = Zotero.Utilities.randomString(Zotero.WPS365.config.fieldKeyLength);
 		var field = {
-			text: Zotero.GoogleDocs.config.citationPlaceholder,
+			text: Zotero.WPS365.config.citationPlaceholder,
 			code: '{}',
 			id,
 			noteIndex: noteType ? this.insertNoteIndex : 0
@@ -211,7 +211,7 @@ Zotero.GoogleDocs.Client.prototype = {
 		
 		this.queued.insert.push(field);
 		await this._insertField(field);
-		// Need to refetch google doc after insertion
+		// Need to refetch wps 365 after insertion
 		this.resetGoogleDocument();
 		return field;
 	},
@@ -223,12 +223,12 @@ Zotero.GoogleDocs.Client.prototype = {
 	 * @param {Object} field
 	 */
 	_insertField: async function(field) {
-		var url = Zotero.GoogleDocs.config.fieldURL + field.id;
+		var url = Zotero.WPS365.config.fieldURL + field.id;
 
 		if (field.noteIndex > 0) {
-			await Zotero.GoogleDocs.UI.insertFootnote();
+			await Zotero.WPS365.UI.insertFootnote();
 		}
-		await Zotero.GoogleDocs.UI.insertLink(field.text, url);
+		await Zotero.WPS365.UI.insertLink(field.text, url);
 	},
 
 	convertPlaceholdersToFields: async function(placeholderIDs, noteType) {
@@ -244,7 +244,7 @@ Zotero.GoogleDocs.Client.prototype = {
 		
 		var fields = await this.getFields();
 		// The call to getFields() might change the selectedFieldID if there are duplicates
-		let selectedFieldID = this.currentFieldID = await Zotero.GoogleDocs.UI.getSelectedFieldID();
+		let selectedFieldID = this.currentFieldID = await Zotero.WPS365.UI.getSelectedFieldID();
 		for (let field of fields) {
 			if (field.id == selectedFieldID) {
 				return field;
@@ -253,7 +253,7 @@ Zotero.GoogleDocs.Client.prototype = {
 		if (selectedFieldID.startsWith("broken=")) {
 			this.isInOrphanedField = true;
 			if (showOrphanedCitationAlert === true && !this.orphanedCitationAlertShown) {
-				let result = await Zotero.GoogleDocs.UI.displayOrphanedCitationAlert();
+				let result = await Zotero.WPS365.UI.displayOrphanedCitationAlert();
 				if (!result) {
 					throw new Error('Handled Error');
 				}
@@ -297,7 +297,7 @@ Zotero.GoogleDocs.Client.prototype = {
 		const doc = await this.getGoogleDocument();
 		await doc.exportDocument(...arguments);
 		this.resetGoogleDocument();
-		Zotero.GoogleDocs.downloadInterceptBlocked = true;
+		Zotero.WPS365.downloadInterceptBlocked = true;
 	},
 	
 	setText: async function(fieldID, text, isRich) {
@@ -337,12 +337,12 @@ Zotero.GoogleDocs.Client.prototype = {
 		// only undo the insert operation
 		if (this.queued.insert[0] && this.queued.insert[0].id == fieldID) {
 			let [field] = this.queued.insert.splice(0, 1);
-			await Zotero.GoogleDocs.UI.undo();
+			await Zotero.WPS365.UI.undo();
 			// For note citations we also need to undo the footnote insert
 			if (field.noteIndex > 0) {
-				await Zotero.GoogleDocs.UI.undo();
-				await Zotero.GoogleDocs.UI.undo();
-				await Zotero.GoogleDocs.UI.undo();
+				await Zotero.WPS365.UI.undo();
+				await Zotero.WPS365.UI.undo();
+				await Zotero.WPS365.UI.undo();
 			}
 			// Need to refetch fields
 			this._fields = null;
@@ -354,7 +354,7 @@ Zotero.GoogleDocs.Client.prototype = {
 		field.unlink();
 		// This call is only ever a part of Unlink Citations, which means that
 		// after it there will be no more Zotero links in the file
-		Zotero.GoogleDocs.hasZoteroCitations = false;
+		Zotero.WPS365.hasZoteroCitations = false;
 	},
 	
 	select: async function(fieldID) {
@@ -363,8 +363,8 @@ Zotero.GoogleDocs.Client.prototype = {
 		if (!field) {
 			throw new Error(`Attempting to select field ${fieldID} that does not exist in the document`);
 		}
-		let url = Zotero.GoogleDocs.config.fieldURL+field.id;
-		if (!await Zotero.GoogleDocs.UI.selectText(field.text, url)) {
+		let url = Zotero.WPS365.config.fieldURL+field.id;
+		if (!await Zotero.WPS365.UI.selectText(field.text, url)) {
 			Zotero.debug(`Failed to select ${field.text} with url ${url}`);
 		}
 	},

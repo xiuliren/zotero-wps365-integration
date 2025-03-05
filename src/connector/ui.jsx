@@ -43,12 +43,12 @@ const SYNC_ICON_SELECTORS = ['.docs-icon-sync', '.docs-sync-20'];
 const SYNC_TIMEOUT = 10e3;
 
 /**
- * A class that hacks into the Google Docs editor UI to allow performing various actions that should
+ * A class that hacks into the WPS 365 editor UI to allow performing various actions that should
  * be properly done using AppsScript if our script was document-bound, but it is not.
  * Possibly prone to some breakage if Google changes the editor, although no minified JS is 
  * called and it uses what seems to be stable classes and IDs in the html.
  */
-Zotero.GoogleDocs.UI = {
+Zotero.WPS365.UI = {
 	inLink: false,
 	enabled: true,
 	isUpdating: false,
@@ -68,56 +68,56 @@ Zotero.GoogleDocs.UI = {
 		this.interceptDownloads();
 		this.interceptPaste();
 		this.initModeMonitor();
-		Zotero.GoogleDocs.UI.LinkInsertBubble.init();
+		Zotero.WPS365.UI.LinkInsertBubble.init();
 	},
 
 	injectIntoDOM: async function () {
-		Zotero.GoogleDocs.UI.menubutton = document.getElementById('docs-zotero-menubutton');
+		Zotero.WPS365.UI.menubutton = document.getElementById('docs-zotero-menubutton');
 
 		// The Zotero Menu
-		Zotero.GoogleDocs.UI.menuDiv = document.createElement('div');
-		Zotero.GoogleDocs.UI.menuDiv.id = 'docs-zotero-menu-container';
-		document.getElementsByTagName('body')[0].appendChild(Zotero.GoogleDocs.UI.menuDiv);
-		Zotero.GoogleDocs.UI.menu = <Zotero.GoogleDocs.UI.Menu execCommand={Zotero.GoogleDocs.execCommand}/>;
-		ReactDOM.render(Zotero.GoogleDocs.UI.menu, Zotero.GoogleDocs.UI.menuDiv);
+		Zotero.WPS365.UI.menuDiv = document.createElement('div');
+		Zotero.WPS365.UI.menuDiv.id = 'docs-zotero-menu-container';
+		document.getElementsByTagName('body')[0].appendChild(Zotero.WPS365.UI.menuDiv);
+		Zotero.WPS365.UI.menu = <Zotero.WPS365.UI.Menu execCommand={Zotero.WPS365.execCommand}/>;
+		ReactDOM.render(Zotero.WPS365.UI.menu, Zotero.WPS365.UI.menuDiv);
 		
 		// The Zotero button
-		Zotero.GoogleDocs.UI.button = document.querySelector('#zoteroAddEditCitation');
-		Zotero.GoogleDocs.UI.button.addEventListener('click', () => {
-			Zotero.GoogleDocs.UI.enabled && Zotero.GoogleDocs.execCommand('addEditCitation')
+		Zotero.WPS365.UI.button = document.querySelector('#zoteroAddEditCitation');
+		Zotero.WPS365.UI.button.addEventListener('click', () => {
+			Zotero.WPS365.UI.enabled && Zotero.WPS365.execCommand('addEditCitation')
 		});
 		
 		// CitationEditor - link bubble observer
-		Zotero.GoogleDocs.UI.citationEditorDiv = document.createElement('div');
-		Zotero.GoogleDocs.UI.citationEditorDiv.id = 'docs-zotero-citationEditor-container';
-		document.getElementsByClassName('kix-appview-editor')[0].appendChild(Zotero.GoogleDocs.UI.citationEditorDiv);
-		Zotero.GoogleDocs.UI.linkbubbleOverrideRef = React.createRef();
-		Zotero.GoogleDocs.UI.citationEditor = 
-			<Zotero.GoogleDocs.UI.LinkbubbleOverride
-				ref={Zotero.GoogleDocs.UI.linkbubbleOverrideRef}
-				edit={() => Zotero.GoogleDocs.editField()}
+		Zotero.WPS365.UI.citationEditorDiv = document.createElement('div');
+		Zotero.WPS365.UI.citationEditorDiv.id = 'docs-zotero-citationEditor-container';
+		document.getElementsByClassName('kix-appview-editor')[0].appendChild(Zotero.WPS365.UI.citationEditorDiv);
+		Zotero.WPS365.UI.linkbubbleOverrideRef = React.createRef();
+		Zotero.WPS365.UI.citationEditor = 
+			<Zotero.WPS365.UI.LinkbubbleOverride
+				ref={Zotero.WPS365.UI.linkbubbleOverrideRef}
+				edit={() => Zotero.WPS365.editField()}
 			/>;
-		ReactDOM.render(Zotero.GoogleDocs.UI.citationEditor, Zotero.GoogleDocs.UI.citationEditorDiv);
+		ReactDOM.render(Zotero.WPS365.UI.citationEditor, Zotero.WPS365.UI.citationEditorDiv);
 		
 		// Please wait screen
-		Zotero.GoogleDocs.UI.pleaseWaitContainer = document.createElement('div');
-		Zotero.GoogleDocs.UI.pleaseWaitContainer.id = 'docs-zotero-pleaseWait-container';
+		Zotero.WPS365.UI.pleaseWaitContainer = document.createElement('div');
+		Zotero.WPS365.UI.pleaseWaitContainer.id = 'docs-zotero-pleaseWait-container';
 		document.querySelector('.kix-appview-editor-container').insertBefore(
-			Zotero.GoogleDocs.UI.pleaseWaitContainer,
+			Zotero.WPS365.UI.pleaseWaitContainer,
 			document.querySelector('.kix-appview-editor'));
-		ReactDOM.render(<Zotero.GoogleDocs.UI.PleaseWait ref={ref => Zotero.GoogleDocs.UI.pleaseWaitScreen = ref}/>,
-			Zotero.GoogleDocs.UI.pleaseWaitContainer);
+		ReactDOM.render(<Zotero.WPS365.UI.PleaseWait ref={ref => Zotero.WPS365.UI.pleaseWaitScreen = ref}/>,
+			Zotero.WPS365.UI.pleaseWaitContainer);
 			
 		// Orphaned citation UI
-		Zotero.GoogleDocs.UI.orphanedCitationsContainer = document.createElement('div');
-		Zotero.GoogleDocs.UI.orphanedCitationsContainer.classList.add('goog-inline-block');
-		Zotero.GoogleDocs.UI.orphanedCitationsContainer.id = 'docs-zotero-orphanedCitation-container';
+		Zotero.WPS365.UI.orphanedCitationsContainer = document.createElement('div');
+		Zotero.WPS365.UI.orphanedCitationsContainer.classList.add('goog-inline-block');
+		Zotero.WPS365.UI.orphanedCitationsContainer.id = 'docs-zotero-orphanedCitation-container';
 		document.querySelector('.docs-titlebar-buttons').insertBefore(
-			Zotero.GoogleDocs.UI.orphanedCitationsContainer,
+			Zotero.WPS365.UI.orphanedCitationsContainer,
 			document.querySelector('#docs-titlebar-share-client-button'));
-		ReactDOM.render(<Zotero.GoogleDocs.UI.OrphanedCitations
-			ref={ref => Zotero.GoogleDocs.UI.orphanedCitations = ref}/>,
-			Zotero.GoogleDocs.UI.orphanedCitationsContainer)
+		ReactDOM.render(<Zotero.WPS365.UI.OrphanedCitations
+			ref={ref => Zotero.WPS365.UI.orphanedCitations = ref}/>,
+			Zotero.WPS365.UI.orphanedCitationsContainer)
 	},
 	
 	interceptDownloads: async function() {
@@ -145,31 +145,31 @@ Zotero.GoogleDocs.UI = {
 		for (let elem of downloadMenuItems) {
 			if (elem.textContent.includes('.txt')) continue;
 			elem.addEventListener('mouseup', async function(event) {
-				if (!Zotero.GoogleDocs.hasZoteroCitations ||
-					Zotero.GoogleDocs.downloadInterceptBlocked) return;
-				if (Zotero.GoogleDocs.UI.dontInterceptDownload) {
-					Zotero.GoogleDocs.UI.dontInterceptDownload = false;
+				if (!Zotero.WPS365.hasZoteroCitations ||
+					Zotero.WPS365.downloadInterceptBlocked) return;
+				if (Zotero.WPS365.UI.dontInterceptDownload) {
+					Zotero.WPS365.UI.dontInterceptDownload = false;
 					return;
 				}
 				event.stopImmediatePropagation();
 				event.preventDefault();
 				
 				let msg = [
-					Zotero.getString('integration_googleDocs_unlinkBeforeSaving_warning'),
+					Zotero.getString('integration_WPS365_unlinkBeforeSaving_warning'),
 					'\n\n',
-					Zotero.getString('integration_googleDocs_unlinkBeforeSaving_instructions')
+					Zotero.getString('integration_WPS365_unlinkBeforeSaving_instructions')
 				].join('');
 				let options = {
 					title: Zotero.getString('general_warning'),
-					button1Text: Zotero.getString('integration_googleDocs_unlinkBeforeSaving_downloadAnyway'),
+					button1Text: Zotero.getString('integration_WPS365_unlinkBeforeSaving_downloadAnyway'),
 					button2Text: Zotero.getString('general_cancel'),
 					message: msg.replace(/\n/g, '<br/>')
 				};
 
 				let result = await Zotero.Inject.confirm(options);
 				if (result.button == 1) {
-					Zotero.GoogleDocs.UI.dontInterceptDownload = true;
-					Zotero.GoogleDocs.UI.clickElement(elem);
+					Zotero.WPS365.UI.dontInterceptDownload = true;
+					Zotero.WPS365.UI.clickElement(elem);
 				}
 			});
 			i++;
@@ -212,9 +212,9 @@ Zotero.GoogleDocs.UI = {
 			// but who is going to say no?
 			// else {
 			// 	let msg = [
-			// 		Zotero.getString('integration_googleDocs_onCitationPaste_notice', ZOTERO_CONFIG.CLIENT_NAME),
+			// 		Zotero.getString('integration_WPS365_onCitationPaste_notice', ZOTERO_CONFIG.CLIENT_NAME),
 			// 		'\n\n',
-			// 		Zotero.getString('integration_googleDocs_onCitationPaste_warning'),
+			// 		Zotero.getString('integration_WPS365_onCitationPaste_warning'),
 			// 	].join('');
 			// 	let result = await this.displayAlert(msg, 0, 2);
 			// 	if (!result) return true;
@@ -230,7 +230,7 @@ Zotero.GoogleDocs.UI = {
 			let linksToRanges = {};
 			for (let i = 0; i < links.length; i++) {
 				if (links[i] && links[i].lnks_link
-						&& links[i].lnks_link.ulnk_url.startsWith(Zotero.GoogleDocs.config.fieldURL)) {
+						&& links[i].lnks_link.ulnk_url.startsWith(Zotero.WPS365.config.fieldURL)) {
 					let linkStart = i;
 					let linkEnd = i+1;
 					for (; i < links.length; i++) {
@@ -257,21 +257,21 @@ Zotero.GoogleDocs.UI = {
 				return true;
 			}
 			try {
-				Zotero.GoogleDocs.UI.toggleUpdatingScreen(true);
+				Zotero.WPS365.UI.toggleUpdatingScreen(true);
 				await this.waitToSaveInsertion();
 				let docID = document.location.href.match(/https:\/\/docs.google.com\/document\/d\/([^/]*)/)[1];
 				let tabID = new URL(document.location.href).searchParams.get('tab');
 				let orphanedCitations;
-				if (Zotero.GoogleDocs.Client.isV2) {
-					let doc = new Zotero.GoogleDocs.Document(await Zotero.GoogleDocs_API.getDocument(docID, this.tabId));
+				if (Zotero.WPS365.Client.isV2) {
+					let doc = new Zotero.WPS365.Document(await Zotero.WPS365_API.getDocument(docID, this.tabId));
 					await doc.addPastedRanges(linksToRanges);
 					orphanedCitations = doc.orphanedCitations;
 				} else {
-					let response = await Zotero.GoogleDocs_API.run({docID, tabID}, 'addPastedRanges', [linksToRanges]);
+					let response = await Zotero.WPS365_API.run({docID, tabID}, 'addPastedRanges', [linksToRanges]);
 					orphanedCitations = response.orphanedCitations;
 				}
 				if (orphanedCitations && orphanedCitations.length) {
-					Zotero.GoogleDocs.UI.orphanedCitations.setCitations(orphanedCitations);
+					Zotero.WPS365.UI.orphanedCitations.setCitations(orphanedCitations);
 				}
 			} catch (e) {
 				if (e.message == "Handled Error") {
@@ -280,10 +280,10 @@ Zotero.GoogleDocs.UI = {
 				}
 				Zotero.debug(`Exception in interceptPaste()`);
 				Zotero.logError(e);
-				Zotero.GoogleDocs.Client.prototype.displayAlert(e.message, 0, 0);
+				Zotero.WPS365.Client.prototype.displayAlert(e.message, 0, 0);
 			} finally {
-				Zotero.GoogleDocs.UI.toggleUpdatingScreen(false);
-				Zotero.GoogleDocs.lastClient = null;
+				Zotero.WPS365.UI.toggleUpdatingScreen(false);
+				Zotero.WPS365.lastClient = null;
 			}
 		}, {capture: true});
 	},
@@ -297,7 +297,7 @@ Zotero.GoogleDocs.UI = {
 		const options = {
 			title: ZOTERO_CONFIG.CLIENT_NAME,
 			button2Text: "",
-			message: Zotero.getString('integration_googleDocs_docxAlert', ZOTERO_CONFIG.CLIENT_NAME),
+			message: Zotero.getString('integration_WPS365_docxAlert', ZOTERO_CONFIG.CLIENT_NAME),
 		};
 		return Zotero.Inject.confirm(options);
 	},
@@ -308,10 +308,10 @@ Zotero.GoogleDocs.UI = {
 	displayOrphanedCitationAlert: async function() {
 		const options = {
 			title: Zotero.getString('general_warning'),
-			button1Text: Zotero.getString('integration_googleDocs_orphanedCitations_alertButton'),
+			button1Text: Zotero.getString('integration_WPS365_orphanedCitations_alertButton'),
 			button2Text: "Cancel",
 			button3Text: Zotero.getString('general_moreInfo'),
-			message: Zotero.getString('integration_googleDocs_orphanedCitations_alert', ZOTERO_CONFIG.CLIENT_NAME),
+			message: Zotero.getString('integration_WPS365_orphanedCitations_alert', ZOTERO_CONFIG.CLIENT_NAME),
 		};
 		let result = await Zotero.Inject.confirm(options);
 		if (result.button == 2) {
@@ -331,7 +331,7 @@ Zotero.GoogleDocs.UI = {
 		else {
 			this.isUpdating = display;
 		}
-		Zotero.GoogleDocs.UI.pleaseWaitScreen.toggle(this.isUpdating);
+		Zotero.WPS365.UI.pleaseWaitScreen.toggle(this.isUpdating);
 	},
 	
 	initModeMonitor: async function() {
@@ -403,9 +403,9 @@ Zotero.GoogleDocs.UI = {
 			`Add/edit Zotero citation (${this.shortcut})`;
 
 		var textEventTarget = document.querySelector('.docs-texteventtarget-iframe').contentDocument;
-		Zotero.Inject.addKeyboardShortcut(Object.assign(modifiers), Zotero.GoogleDocs.editField, textEventTarget);
+		Zotero.Inject.addKeyboardShortcut(Object.assign(modifiers), Zotero.WPS365.editField, textEventTarget);
 
-		// Open Zotero menu shortcut, mimicking google doc's native shortcuts
+		// Open Zotero menu shortcut, mimicking wps 365's native shortcuts
 		modifiers = {altKey: true, keyCode: 90}
 		if (Zotero.isMac) {
 			modifiers.ctrlKey = true;
@@ -418,7 +418,7 @@ Zotero.GoogleDocs.UI = {
 	},
 	
 	activate: async function(force, message) {
-		message = message || "Zotero needs the Google Docs tab to stay active for the current operation. " +
+		message = message || "Zotero needs the WPS 365 tab to stay active for the current operation. " +
 				"Please do not switch away from the browser until the operation is complete.";
 		await Zotero.Connector_Browser.bringToFront(true);
 		if (force && ! document.hasFocus()) {
@@ -551,21 +551,21 @@ Zotero.GoogleDocs.UI = {
 		// On document load findinput is not present, but we need to set its value before
 		// clicking ctrl+f
 		if (!document.querySelector('.docs-findinput-input')) {
-			await Zotero.GoogleDocs.UI.sendKeyboardEvent(openFindDialogKbEvent);
-			await Zotero.GoogleDocs.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
+			await Zotero.WPS365.UI.sendKeyboardEvent(openFindDialogKbEvent);
+			await Zotero.WPS365.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
 
-			await Zotero.GoogleDocs.UI.sendKeyboardEvent(openFindDialogKbEvent);
+			await Zotero.WPS365.UI.sendKeyboardEvent(openFindDialogKbEvent);
 			document.querySelector('.docs-findinput-input').value = text;
 			document.querySelector('.docs-findinput-input').dispatchEvent(new KeyboardEvent('input'));
 			await Zotero.Promise.delay();
-			await Zotero.GoogleDocs.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
+			await Zotero.WPS365.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
 		} else {
-			await Zotero.GoogleDocs.UI.sendKeyboardEvent(openFindDialogKbEvent);
+			await Zotero.WPS365.UI.sendKeyboardEvent(openFindDialogKbEvent);
 			document.querySelector('.docs-findinput-input').value = text;
 			document.querySelector('.docs-findinput-input').dispatchEvent(new KeyboardEvent('input'));
 			await Zotero.Promise.delay();
-			await Zotero.GoogleDocs.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-down'));
-			await Zotero.GoogleDocs.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
+			await Zotero.WPS365.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-down'));
+			await Zotero.WPS365.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
 		}
 		let match = /[0-9]+[^0-9]+([0-9]+)/.exec(document.querySelector('.docs-findinput-count').textContent);
 		let numMatches = 0;
@@ -575,16 +575,16 @@ Zotero.GoogleDocs.UI = {
 		if (!numMatches) {
 			return false;
 		}
-		if (!url || (Zotero.GoogleDocs.UI.inLink && Zotero.GoogleDocs.UI.lastLinkURL == url)) {
+		if (!url || (Zotero.WPS365.UI.inLink && Zotero.WPS365.UI.lastLinkURL == url)) {
 			return true;
 		}
 		
 		for (numMatches--; numMatches > 0; numMatches--) {
 			await this.activate(true);
-			await Zotero.GoogleDocs.UI.sendKeyboardEvent(openFindDialogKbEvent);
-			await Zotero.GoogleDocs.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-down'));
-			await Zotero.GoogleDocs.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
-			if (Zotero.GoogleDocs.UI.inLink && Zotero.GoogleDocs.UI.lastLinkURL == url) {
+			await Zotero.WPS365.UI.sendKeyboardEvent(openFindDialogKbEvent);
+			await Zotero.WPS365.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-down'));
+			await Zotero.WPS365.UI.clickElement(document.querySelector('#docs-findbar-id .docs-icon-close'));
+			if (Zotero.WPS365.UI.inLink && Zotero.WPS365.UI.lastLinkURL == url) {
 				return true;
 			}
 		}
@@ -595,11 +595,11 @@ Zotero.GoogleDocs.UI = {
 		if (Zotero.isMac) {
 			insertFootnoteKbEvent = {metaKey: true, altKey: true, key: 'f', keyCode: 70};
 		}
-		await Zotero.GoogleDocs.UI.sendKeyboardEvent(insertFootnoteKbEvent);
+		await Zotero.WPS365.UI.sendKeyboardEvent(insertFootnoteKbEvent);
 		// Somehow the simulated footnote shortcut inserts an "F" at the start of the footnote.
 		// But not on a mac. Why? Why not on a Mac?
 		if (!Zotero.isMac) {
-			await Zotero.GoogleDocs.UI.sendKeyboardEvent({key: "Backspace", keyCode: 8});
+			await Zotero.WPS365.UI.sendKeyboardEvent({key: "Backspace", keyCode: 8});
 		}
 	},
 	
@@ -608,9 +608,9 @@ Zotero.GoogleDocs.UI = {
 		// If we do not remove the selected text content, then the insert link dialog does not
 		// contain a field to specify link text and our code breaks
 		if (selectedText.length) {
-			await Zotero.GoogleDocs.UI.sendKeyboardEvent({key: "Backspace", keyCode: 8});
+			await Zotero.WPS365.UI.sendKeyboardEvent({key: "Backspace", keyCode: 8});
 		}
-		await Zotero.GoogleDocs.UI.openInsertLinkPopup();
+		await Zotero.WPS365.UI.openInsertLinkPopup();
 		let textInput = this._getElemBySelectors(TEXT_INPUT_SELECTORS);
 		textInput.value = text;
 		textInput.dispatchEvent(new InputEvent('input', {data: text, bubbles: true}));
@@ -618,7 +618,7 @@ Zotero.GoogleDocs.UI = {
 		urlInput.value = url;
 		urlInput.dispatchEvent(new InputEvent('input', {data: url, bubbles: true}));
 
-		await Zotero.GoogleDocs.UI.closeInsertLinkPopup(true);
+		await Zotero.WPS365.UI.closeInsertLinkPopup(true);
 	},
 	
 	undo: async function() {
@@ -626,7 +626,7 @@ Zotero.GoogleDocs.UI = {
 		if (Zotero.isMac) {
 			undoKbEvent = {metaKey: true, key: 'z', keyCode: 90};
 		}
-		await Zotero.GoogleDocs.UI.sendKeyboardEvent(undoKbEvent);
+		await Zotero.WPS365.UI.sendKeyboardEvent(undoKbEvent);
 	},
 	
 	isInLink: function() {
@@ -652,7 +652,7 @@ Zotero.GoogleDocs.UI = {
 		// so we wait here preemptively. Worst case the cursor won't properly move to the front
 		// of the item.
 		await Zotero.Promise.delay(500);
-		let isZoteroLink = url => url.indexOf(Zotero.GoogleDocs.config.fieldURL) == 0;
+		let isZoteroLink = url => url.indexOf(Zotero.WPS365.config.fieldURL) == 0;
 		
 		let textEventTarget = document.querySelector('.docs-texteventtarget-iframe').contentDocument;
 		let copyEventTarget = textEventTarget.querySelector('[contenteditable]');;
@@ -681,11 +681,11 @@ Zotero.GoogleDocs.UI = {
 	},
 	
 	openInsertLinkPopup: async function(...args) {
-		return Zotero.GoogleDocs.UI.LinkInsertBubble.open(...args);
+		return Zotero.WPS365.UI.LinkInsertBubble.open(...args);
 	},
 	
 	closeInsertLinkPopup: async function(...args) {
-		return Zotero.GoogleDocs.UI.LinkInsertBubble.close(...args);
+		return Zotero.WPS365.UI.LinkInsertBubble.close(...args);
 	},
 	
 	/**
@@ -693,7 +693,7 @@ Zotero.GoogleDocs.UI = {
 	 * and checking whether the selected text is a Zotero citation
 	 */
 	getSelectedFieldID: async function() {
-		let isZoteroLink = url => url.indexOf(Zotero.GoogleDocs.config.fieldURL) == 0;
+		let isZoteroLink = url => url.indexOf(Zotero.WPS365.config.fieldURL) == 0;
 		
 		let textEventTarget = this._getElemBySelectors('.docs-texteventtarget-iframe').contentDocument;
 		let copyEventTarget = textEventTarget.querySelector('[contenteditable]');;
@@ -708,7 +708,7 @@ Zotero.GoogleDocs.UI = {
 			textEventTarget.dispatchEvent(new KeyboardEvent('keydown', {key: "ArrowLeft", keyCode: 37, shiftKey: true}));
 			// If you modify the selection cursor by dispatching fake keyboard events and the current
 			// document focus is not in the text of the document (but rather in e.g. a menu), the internal
-			// google docs code does not update the element in the document which usually contains
+			// wps 365 code does not update the element in the document which usually contains
 			// the HTML of the selected text.
 			// We dispatch a fake copy event which forces the update, and then we can retrieve
 			// the updated current selection.
@@ -738,7 +738,7 @@ Zotero.GoogleDocs.UI = {
 		}
 
 		if (!isZoteroLink(selectionLink)) return;
-		return selectionLink.substr(Zotero.GoogleDocs.config.fieldURL.length);
+		return selectionLink.substr(Zotero.WPS365.config.fieldURL.length);
 	},
 	
 	setupWaitForSave: function() {
@@ -763,7 +763,7 @@ Zotero.GoogleDocs.UI = {
 		})]);
 	},
 
-	// Wait for google docs to save the text insertion
+	// Wait for wps 365 to save the text insertion
 	waitToSaveInsertion: async function() {
 		return this.docSyncedPromise;
 	},
@@ -777,12 +777,12 @@ Zotero.GoogleDocs.UI = {
 			if (elem) return elem;
 		}
 		if (!throwError) return;
-		Zotero.GoogleDocs.UI.displayAlert('Google Docs UI has changed. Please submit a <a href="https://www.zotero.org/support/reporting_problems">Report ID</a> from the Zotero Connector on the <a href="https://forums.zotero.org">Zotero Forums</a>.')
-		throw new Error(`Google Docs UI has changed. Trying to retrieve ${JSON.stringify(selectors)}`);
+		Zotero.WPS365.UI.displayAlert('WPS 365 UI has changed. Please submit a <a href="https://www.zotero.org/support/reporting_problems">Report ID</a> from the Zotero Connector on the <a href="https://forums.zotero.org">Zotero Forums</a>.')
+		throw new Error(`WPS 365 UI has changed. Trying to retrieve ${JSON.stringify(selectors)}`);
 	}
 }
 
-Zotero.GoogleDocs.UI.LinkInsertBubble = {
+Zotero.WPS365.UI.LinkInsertBubble = {
 	_linkInsertBubble: null,
 	_linkInsertBubblePromise: null,
 	_openDeferred: Zotero.Promise.defer(),
@@ -793,19 +793,19 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 		this._stylesheet = document.createElement('style');
 		this._stylesheet.className = 'zotero-stylesheet';
 		document.children[0].appendChild(this._stylesheet);
-		this._linkInsertBubble = Zotero.GoogleDocs.UI._getElemBySelectors('.docsLinkSmartinsertlinkBubble', false);
+		this._linkInsertBubble = Zotero.WPS365.UI._getElemBySelectors('.docsLinkSmartinsertlinkBubble', false);
 		if (!this._linkInsertBubble) {
 			// Link insert popup does not exist in the DOM until the user (or Zotero) opens
 			// it for the first time, so we wait for that to happen
 			this._linkInsertBubblePromise = new Promise((resolve) => {
 				let observer = new MutationObserver(() => {
-					this._linkInsertBubble = Zotero.GoogleDocs.UI._getElemBySelectors('.docsLinkSmartinsertlinkBubble', false);
+					this._linkInsertBubble = Zotero.WPS365.UI._getElemBySelectors('.docsLinkSmartinsertlinkBubble', false);
 					if (this._linkInsertBubble) {
 						observer.disconnect();
 						resolve(this._linkInsertBubble);
 					}
 				});
-				observer.observe(Zotero.GoogleDocs.UI._getElemBySelectors('.kix-appview-editor'), { childList: true });
+				observer.observe(Zotero.WPS365.UI._getElemBySelectors('.kix-appview-editor'), { childList: true });
 			})
 		}
 		else {
@@ -817,7 +817,7 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 		return this._linkInsertBubblePromise;
 	},
 
-	// Google Docs JS manages the styling of the insert link card and if we change it on the element
+	// WPS 365 JS manages the styling of the insert link card and if we change it on the element
 	// things break, so we force it invisible (to prevent from flash opening) via a stylesheet
 	// injection
 	makeInvisible() {
@@ -837,7 +837,7 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 		await new Promise((resolve) => {
 			observer = new MutationObserver((mutationList) => {
 				if (linkInsertBubble.style.opacity === '1' && !linkInsertBubble.style.transition) {
-					// 2024 02 Google Docs linkbubble changes added an opening animation. If we attempt to close the dialog
+					// 2024 02 WPS 365 linkbubble changes added an opening animation. If we attempt to close the dialog
 					// too soon after opening it, it gets stuck in the animating view, with visibility: hidden; display block;,
 					// breaking cursor clicks on the document. It has a 218ms animation that we wait for here.
 					resolve();
@@ -847,7 +847,7 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 			// Make sure we are not permanently breaking the insert link bubble if something
 			// throws an error in our code and the observer does not get disconnected
 			timeout = setTimeout(() => {
-				Zotero.logError('GoogleDocs.UI.LinkInsertBubble: waiting to open has timed out. Link insert bubble animation watcher broken?')
+				Zotero.logError('WPS365.UI.LinkInsertBubble: waiting to open has timed out. Link insert bubble animation watcher broken?')
 				resolve();
 			}, 2000);
 		});
@@ -858,7 +858,7 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 	async open() {
 		// Setup insert link bubble hiding
 		let openPromise = this.waitToOpenAndMakeInvisible();
-		await Zotero.GoogleDocs.UI.clickElement(Zotero.GoogleDocs.UI._getElemBySelectors('#insertLinkButton'));
+		await Zotero.WPS365.UI.clickElement(Zotero.WPS365.UI._getElemBySelectors('#insertLinkButton'));
 		await openPromise;
 	},
 	
@@ -868,7 +868,7 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 		await new Promise((resolve) => {
 			observer = new MutationObserver(() => {
 				if (linkInsertBubble.style.opacity === '0' && !linkInsertBubble.style.transition) {
-					// 2024 02 Google Docs linkbubble changes added an opening animation. If we attempt to close the dialog
+					// 2024 02 WPS 365 linkbubble changes added an opening animation. If we attempt to close the dialog
 					// too soon after opening it, it gets stuck in the animating view, with visibility: hidden; display block;,
 					// breaking cursor clicks on the document. It has a 218ms animation that we wait for here.
 					resolve();
@@ -878,7 +878,7 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 			// Make sure we are not permanently breaking the insert link bubble if something
 			// throws an error in our code and the observer does not get disconnected
 			timeout = setTimeout(() => {
-				Zotero.logError('GoogleDocs.UI.LinkInsertBubble: waiting to close has timed out. Link insert bubble animation watcher broken?')
+				Zotero.logError('WPS365.UI.LinkInsertBubble: waiting to close has timed out. Link insert bubble animation watcher broken?')
 				resolve();
 			}, 2000);
 		});
@@ -888,14 +888,14 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 	},
 	
 	async close(confirm=true) {
-		let urlInput = Zotero.GoogleDocs.UI._getElemBySelectors(URL_INPUT_SELECTORS);
+		let urlInput = Zotero.WPS365.UI._getElemBySelectors(URL_INPUT_SELECTORS);
 		let eventTarget = document.querySelector('.docs-calloutbubble-bubble').parentElement;
 		let closePromise = this.waitToCloseAndMakeVisible();
 		// Make sure the dialog is fully opened before we attempt to close it
 		if (confirm && urlInput.value) {
-			Zotero.GoogleDocs.UI.setupWaitForSave();
+			Zotero.WPS365.UI.setupWaitForSave();
 			let applyButton = document.querySelector('.appsElementsLinkInsertionApplyButton');
-			// Likely a bug in the new google docs link insertion UI where pressing Enter
+			// Likely a bug in the new wps 365 link insertion UI where pressing Enter
 			// does not close the dialog, and will probably be changed/fixed, but for now
 			// we simulate a click on the apply button.
 			// The reason the old code doesn't click the apply button is that when the previous
@@ -916,10 +916,10 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 						observer.observe(applyButton, {attributes: true});
 					})
 				}
-				await Zotero.GoogleDocs.UI.clickElement(applyButton);
+				await Zotero.WPS365.UI.clickElement(applyButton);
 			}
 			else {
-				await Zotero.GoogleDocs.UI.sendKeyboardEvent({key: "Enter", keyCode: 13}, eventTarget);
+				await Zotero.WPS365.UI.sendKeyboardEvent({key: "Enter", keyCode: 13}, eventTarget);
 			}
 		}
 		else {
@@ -935,11 +935,11 @@ Zotero.GoogleDocs.UI.LinkInsertBubble = {
 	}
 };
 
-Zotero.GoogleDocs.UI.Menu = class extends React.Component {
+Zotero.WPS365.UI.Menu = class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			open: Zotero.GoogleDocs.UI.menubutton.classList.contains('goog-control-open'),
+			open: Zotero.WPS365.UI.menubutton.classList.contains('goog-control-open'),
 			displayAddNoteButton: false,
 			displayCitationExplorerOption: false,
 			highlightedItem: -1
@@ -953,12 +953,12 @@ Zotero.GoogleDocs.UI.Menu = class extends React.Component {
 				if (mutation.attributeName != 'class' ||
 					mutation.target.classList.contains('goog-control-open') == this.state.open) continue;
 				let open = mutation.target.classList.contains('goog-control-open');
-				let displayAddNoteButton = await Zotero.Connector.getPref('googleDocsAddNoteEnabled');
-				let displayCitationExplorerOption = await Zotero.Connector.getPref('googleDocsCitationExplorerEnabled');
+				let displayAddNoteButton = await Zotero.Connector.getPref('WPS365AddNoteEnabled');
+				let displayCitationExplorerOption = await Zotero.Connector.getPref('WPS365CitationExplorerEnabled');
 				this.setState({ open, displayAddNoteButton, displayCitationExplorerOption, highlightedItem: -1 });
 			}
 		}.bind(this));
-		this.observer.observe(Zotero.GoogleDocs.UI.menubutton, {attributes: true});
+		this.observer.observe(Zotero.WPS365.UI.menubutton, {attributes: true});
 		this._addKeyboardNavigation();
 	}
 	
@@ -994,12 +994,12 @@ Zotero.GoogleDocs.UI.Menu = class extends React.Component {
 	}
 
 	render() {
-		let rect = Zotero.GoogleDocs.UI.menubutton.getBoundingClientRect();
+		let rect = Zotero.WPS365.UI.menubutton.getBoundingClientRect();
 		var style = {
 			display: this.state.open ? 'block' : 'none',
 			top: `${rect.top+rect.height}px`, left: `${rect.left}px`,
 		};
-		if (!Zotero.GoogleDocs.UI.enabled) {
+		if (!Zotero.WPS365.UI.enabled) {
 			style.display = 'none';
 		}
 		
@@ -1014,25 +1014,25 @@ Zotero.GoogleDocs.UI.Menu = class extends React.Component {
 		}
 		
 		this._items = [
-			<Zotero.GoogleDocs.UI.Menu.Item label="Add/edit citation..." shortcutKey='c' activate={this.props.execCommand.bind(this, 'addEditCitation', null)} accel={Zotero.GoogleDocs.UI.shortcut} />,
+			<Zotero.WPS365.UI.Menu.Item label="Add/edit citation..." shortcutKey='c' activate={this.props.execCommand.bind(this, 'addEditCitation', null)} accel={Zotero.WPS365.UI.shortcut} />,
 		]
 		
 		if (this.state.displayAddNoteButton) {
-			this._items.push(<Zotero.GoogleDocs.UI.Menu.Item label="Add note..." shortcutKey='n' activate={this.props.execCommand.bind(this, 'addNote', null)} />);
+			this._items.push(<Zotero.WPS365.UI.Menu.Item label="Add note..." shortcutKey='n' activate={this.props.execCommand.bind(this, 'addNote', null)} />);
 		}
 
 		this._items.push(
-			<Zotero.GoogleDocs.UI.Menu.Item label="Add/edit bibliography" shortcutKey='b' activate={this.props.execCommand.bind(this, 'addEditBibliography', null)} />,
+			<Zotero.WPS365.UI.Menu.Item label="Add/edit bibliography" shortcutKey='b' activate={this.props.execCommand.bind(this, 'addEditBibliography', null)} />,
 		);
 		
 		if (this.state.displayCitationExplorerOption) {
-			this._items.push(<Zotero.GoogleDocs.UI.Menu.Item label="Citation explorer..." shortcutKey='e' activate={this.props.execCommand.bind(this, 'citationExplorer', null)} />);
+			this._items.push(<Zotero.WPS365.UI.Menu.Item label="Citation explorer..." shortcutKey='e' activate={this.props.execCommand.bind(this, 'citationExplorer', null)} />);
 		}
 		
 		this._items.push(
-			<Zotero.GoogleDocs.UI.Menu.Item label="Document preferences..." shortcutKey='p' activate={this.props.execCommand.bind(this, 'setDocPrefs', null)} />,
-			<Zotero.GoogleDocs.UI.Menu.Item label="Refresh" shortcutKey='r' activate={this.props.execCommand.bind(this, 'refresh', null)} />,
-			<Zotero.GoogleDocs.UI.Menu.Item
+			<Zotero.WPS365.UI.Menu.Item label="Document preferences..." shortcutKey='p' activate={this.props.execCommand.bind(this, 'setDocPrefs', null)} />,
+			<Zotero.WPS365.UI.Menu.Item label="Refresh" shortcutKey='r' activate={this.props.execCommand.bind(this, 'refresh', null)} />,
+			<Zotero.WPS365.UI.Menu.Item
 				label="Switch word processors..."
 				shortcutKey='s'
 				activate={async () => {
@@ -1046,7 +1046,7 @@ Zotero.GoogleDocs.UI.Menu = class extends React.Component {
 					}
 					this.props.execCommand('exportDocument');
 				}} />,
-			<Zotero.GoogleDocs.UI.Menu.Item label="Unlink citations..." shortcutKey='u' activate={this.props.execCommand.bind(this, 'removeCodes', null)} />,
+			<Zotero.WPS365.UI.Menu.Item label="Unlink citations..." shortcutKey='u' activate={this.props.execCommand.bind(this, 'removeCodes', null)} />,
 		)
 		
 		this._items.forEach((item, i) => {
@@ -1064,7 +1064,7 @@ Zotero.GoogleDocs.UI.Menu = class extends React.Component {
 	}
 }
 
-Zotero.GoogleDocs.UI.Menu.Item = class extends React.Component {
+Zotero.WPS365.UI.Menu.Item = class extends React.Component {
 	constructor(props) {
 		super(props);
 	}
@@ -1099,7 +1099,7 @@ Zotero.GoogleDocs.UI.Menu.Item = class extends React.Component {
 	}
 };
 
-Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
+Zotero.WPS365.UI.LinkbubbleOverride = class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {open: false, top: "-10000px", left: "-10000px"};
@@ -1120,11 +1120,11 @@ Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
 		const url = Zotero.Utilities.trim(this.linkbubble.querySelector('a').href);
 		const open = style.display != 'none';
 
-		Zotero.GoogleDocs.UI.inLink = open;
-		Zotero.GoogleDocs.UI.lastLinkURL = url;
+		Zotero.WPS365.UI.inLink = open;
+		Zotero.WPS365.UI.lastLinkURL = url;
 		
 		// Check if on zotero field link
-		if (url.includes(Zotero.GoogleDocs.config.fieldURL)) {
+		if (url.includes(Zotero.WPS365.config.fieldURL)) {
 			this.setState({open});
 		}
 		
@@ -1136,11 +1136,11 @@ Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
 				const url = Zotero.Utilities.trim(this.linkbubble.querySelector('a').href);
 				const open = style.display != 'none';
 
-				Zotero.GoogleDocs.UI.inLink = open;
-				Zotero.GoogleDocs.UI.lastLinkURL = url;
+				Zotero.WPS365.UI.inLink = open;
+				Zotero.WPS365.UI.lastLinkURL = url;
 				
 				// Check if on zotero field link
-				if (!url.includes(Zotero.GoogleDocs.config.fieldURL)) {
+				if (!url.includes(Zotero.WPS365.config.fieldURL)) {
 					return this.setState({open: false});
 				}
 
@@ -1163,7 +1163,7 @@ Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
 					for (let node of mutation.addedNodes) {
 						if (node.id == "docs-link-bubble") {
 							observer.disconnect();
-							Zotero.GoogleDocs.UI.inLink = true;
+							Zotero.WPS365.UI.inLink = true;
 							return resolve(node);
 						}
 					}
@@ -1177,10 +1177,10 @@ Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
 		if (!this.state.open) {
 			return <div></div>
 		}
-		Zotero.GoogleDocs.hasZoteroCitations = true;
+		Zotero.WPS365.hasZoteroCitations = true;
 		
 		var top;
-		// If we click away from the link and then on it again, google docs doesn't update
+		// If we click away from the link and then on it again, wps 365 doesn't update
 		// the linkbubble top position so we need to store it manually
 		if (this.linkbubble.style.top == '-100000px') {
 			top = this.lastTop;
@@ -1191,7 +1191,7 @@ Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
 		var style = {left: this.linkbubble.style.left, top};
 		// If plugin disabled we still don't want to show the linkbubble for Zotero citations,
 		// but we don't want to show the Edit with Zotero linkbubble either.
-		if (!Zotero.GoogleDocs.UI.enabled) {
+		if (!Zotero.WPS365.UI.enabled) {
 			style.display = 'none';
 		}
 		return (
@@ -1216,7 +1216,7 @@ Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
 						textDecoration: "none !important"
 					}} href="javascript:void(0);">Edit with Zotero</a>
 					<span style={{color: '#777', textDecoration: 'none', marginRight: '6px'}}>
-						 ({Zotero.GoogleDocs.UI.shortcut})
+						 ({Zotero.WPS365.UI.shortcut})
 					 </span>
 				</div>
 			</div>
@@ -1224,7 +1224,7 @@ Zotero.GoogleDocs.UI.LinkbubbleOverride = class extends React.Component {
 	}
 };
 
-Zotero.GoogleDocs.UI.PleaseWait = class extends React.Component {
+Zotero.WPS365.UI.PleaseWait = class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {isHidden: true};
@@ -1248,7 +1248,7 @@ Zotero.GoogleDocs.UI.PleaseWait = class extends React.Component {
 				display: this.state.isHidden ? "none" : 'flex',
 			}}>
 				<div className="docs-bubble">
-					{Zotero.getString('integration_googleDocs_updating', ZOTERO_CONFIG.CLIENT_NAME)}
+					{Zotero.getString('integration_WPS365_updating', ZOTERO_CONFIG.CLIENT_NAME)}
 					<br/>
 					{Zotero.getString('general_pleaseWait')}
 				</div>
@@ -1258,7 +1258,7 @@ Zotero.GoogleDocs.UI.PleaseWait = class extends React.Component {
 }
 
 
-Zotero.GoogleDocs.UI.OrphanedCitations = React.forwardRef(function(props, ref) {
+Zotero.WPS365.UI.OrphanedCitations = React.forwardRef(function(props, ref) {
 	let [open, setOpen] = React.useState(false);
 	let [citations, setCitations] = React.useState([]);
 	
@@ -1297,8 +1297,8 @@ Zotero.GoogleDocs.UI.OrphanedCitations = React.forwardRef(function(props, ref) {
 		<div
 			role={"button"}
 			id={buttonID}
-			data-tooltip={Zotero.getString('integration_googleDocs_orphanedCitations_buttonTooltip', ZOTERO_CONFIG.CLIENT_NAME)}
-			aria-label={Zotero.getString('integration_googleDocs_orphanedCitations_buttonTooltip', ZOTERO_CONFIG.CLIENT_NAME)}
+			data-tooltip={Zotero.getString('integration_WPS365_orphanedCitations_buttonTooltip', ZOTERO_CONFIG.CLIENT_NAME)}
+			aria-label={Zotero.getString('integration_WPS365_orphanedCitations_buttonTooltip', ZOTERO_CONFIG.CLIENT_NAME)}
 			style={{
 				borderRadius: "50%",
 				cursor: "pointer",
@@ -1319,11 +1319,11 @@ Zotero.GoogleDocs.UI.OrphanedCitations = React.forwardRef(function(props, ref) {
 				}} />
 			</div>
 		</div>,
-		<Zotero.GoogleDocs.UI.OrphanedCitationsList citations={citations} open={open}/>
+		<Zotero.WPS365.UI.OrphanedCitationsList citations={citations} open={open}/>
 	])
 });
 
-Zotero.GoogleDocs.UI.OrphanedCitationsList = function({ citations, open }) {
+Zotero.WPS365.UI.OrphanedCitationsList = function({ citations, open }) {
 	function renderCitation(citation) {
 		return (
 			<li style={{
@@ -1331,7 +1331,7 @@ Zotero.GoogleDocs.UI.OrphanedCitationsList = function({ citations, open }) {
 				marginTop: ".6em"
 			}}>
 				<a className="zotero-orphaned-citation" href="#"
-					onClick={() => Zotero.GoogleDocs.UI.selectText(citation.text, citation.url)}>
+					onClick={() => Zotero.WPS365.UI.selectText(citation.text, citation.url)}>
 					{citation.text}
 				</a>
 			</li>
@@ -1357,7 +1357,7 @@ Zotero.GoogleDocs.UI.OrphanedCitationsList = function({ citations, open }) {
 					marginBottom: ".4em"
 				}}
 				dangerouslySetInnerHTML={{
-					__html: Zotero.getString('integration_googleDocs_orphanedCitations_disclaimer', ZOTERO_CONFIG.CLIENT_NAME)
+					__html: Zotero.getString('integration_WPS365_orphanedCitations_disclaimer', ZOTERO_CONFIG.CLIENT_NAME)
 				}}
 			/>
 			<ul className="zotero-orphaned-citations-list" style={{

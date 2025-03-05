@@ -121,7 +121,7 @@ editAccessObserver.observe(document.documentElement, {childList: true, subtree: 
 // Need to kick this off asynchronously regardless of whether we've added the menu options synchronously here or not
 (async function() {
 	await Zotero.initDeferred.promise;
-	isIntegrationEnabled = isIntegrationEnabled && await Zotero.Prefs.getAsync('integration.googleDocs.enabled');
+	isIntegrationEnabled = isIntegrationEnabled && await Zotero.Prefs.getAsync('integration.WPS365.enabled');
 	if (!isIntegrationEnabled) {
 		if (menuAdded) {
 			let menubutton = document.querySelector('#docs-zotero-menubutton');

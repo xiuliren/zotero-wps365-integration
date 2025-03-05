@@ -373,7 +373,7 @@ exposed.footnotesToInline = function(fieldIDs) {
 		textEl.setLinkUrl(field.links[0].url);
 		
 		footnote.removeFromParent();
-		// Appallingly, Google Docs will happily remove the Footnote and keep the orphaned
+		// Appallingly, WPS 365 will happily remove the Footnote and keep the orphaned
 		// FootnoteSection under the hood, fully queryable and editable with Apps Script
 		// even though it is not shown in the actual editor.
 		footnoteSection.removeFromParent();
@@ -442,7 +442,7 @@ exposed.getFields = function (placeholders) {
 };
 
 /**
- * Function used to write changes to the document. Due to the slow nature of google docs
+ * Function used to write changes to the document. Due to the slow nature of wps 365
  * we try to minimize calls to apps script and combine all doc updates in this function. 
  * To prevent timeouts field changes may be batched in multiple calls, resulting in multiple
  * calls of this function for a "single" integration operation
